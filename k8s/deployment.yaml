@@ -10,20 +10,24 @@ spec:
     metadata:
       labels: { app: pay-svc }
     spec:
+      # ✅ Pod 级别的 securityContext（给所有容器兜底）
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+
       containers:
         - name: app
           image: pay-svc:local
           ports: [{ containerPort: 8080 }]
+          # ✅ 容器级别加强（显式声明，避免“默认值”）
           securityContext:
+            privileged: false
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 10001
-          livenessProbe:
-            httpGet: { path: /health, port: 8080 }
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          readinessProbe:
-            httpGet: { path: /health, port: 8080 }
-            initialDelaySeconds: 5
-            periodSeconds: 5
+            capabilities:
+              drop: ["ALL"]
